@@ -1,0 +1,365 @@
+{
+  "sourceCommit": "fb4534b82935292e6b32c8ca578abbceee318276",
+  "runner": "Postman CLI 1.83.0",
+  "target": "http://localhost:3000",
+  "requests": 44,
+  "assertions": 132,
+  "failed": 0,
+  "exitCode": 0,
+  "durationMs": 1122,
+  "averageResponseMs": 10,
+  "results": [
+    {
+      "name": "Health",
+      "method": "GET",
+      "path": "/api/health",
+      "status": 200,
+      "durationMs": 23,
+      "assertions": 3
+    },
+    {
+      "name": "Missing signup fields",
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 400,
+      "durationMs": 10,
+      "assertions": 3
+    },
+    {
+      "name": "Invalid phone",
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 400,
+      "durationMs": 4,
+      "assertions": 3
+    },
+    {
+      "name": "Register supplier",
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 201,
+      "durationMs": 85,
+      "assertions": 3
+    },
+    {
+      "name": "Select supplier",
+      "method": "PATCH",
+      "path": "/api/auth/select-role",
+      "status": 200,
+      "durationMs": 5,
+      "assertions": 3
+    },
+    {
+      "name": "Register buyer",
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 201,
+      "durationMs": 95,
+      "assertions": 3
+    },
+    {
+      "name": "Select buyer",
+      "method": "PATCH",
+      "path": "/api/auth/select-role",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Duplicate registration",
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "status": 409,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Wrong password",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 401,
+      "durationMs": 82,
+      "assertions": 3
+    },
+    {
+      "name": "Buyer login",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "durationMs": 81,
+      "assertions": 3
+    },
+    {
+      "name": "Profile requires auth",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 401,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Invalid token",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 403,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Buyer profile",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Invalid role",
+      "method": "PATCH",
+      "path": "/api/auth/select-role",
+      "status": 400,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Set Telugu",
+      "method": "PATCH",
+      "path": "/api/auth/language",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Unsupported language",
+      "method": "PATCH",
+      "path": "/api/auth/language",
+      "status": 400,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Buyer cannot list produce",
+      "method": "POST",
+      "path": "/api/products",
+      "status": 403,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Missing product fields",
+      "method": "POST",
+      "path": "/api/products",
+      "status": 400,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Create produce",
+      "method": "POST",
+      "path": "/api/products",
+      "status": 201,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Filter supplier produce",
+      "method": "GET",
+      "path": "/api/products?farmerId=usr_qhodsba&maxPrice=50",
+      "status": 200,
+      "durationMs": 4,
+      "assertions": 3
+    },
+    {
+      "name": "Buyer cannot toggle others stock",
+      "method": "PATCH",
+      "path": "/api/products/prod_yc9e5xp/toggle-stock",
+      "status": 403,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Toggle availability false",
+      "method": "PATCH",
+      "path": "/api/products/prod_yc9e5xp/toggle-stock",
+      "status": 200,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Toggle availability true",
+      "method": "PATCH",
+      "path": "/api/products/prod_yc9e5xp/toggle-stock",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Invalid lock quantity",
+      "method": "POST",
+      "path": "/api/orders/lock-stock",
+      "status": 400,
+      "durationMs": 4,
+      "assertions": 3
+    },
+    {
+      "name": "Excess stock rejected",
+      "method": "POST",
+      "path": "/api/orders/lock-stock",
+      "status": 400,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Lock bulk stock",
+      "method": "POST",
+      "path": "/api/orders/lock-stock",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Release stock",
+      "method": "POST",
+      "path": "/api/orders/release-lock",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Lock for checkout",
+      "method": "POST",
+      "path": "/api/orders/lock-stock",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Empty checkout",
+      "method": "POST",
+      "path": "/api/orders/checkout",
+      "status": 400,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Checkout",
+      "method": "POST",
+      "path": "/api/orders/checkout",
+      "status": 201,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "buyer order list",
+      "method": "GET",
+      "path": "/api/orders/buyer",
+      "status": 200,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "supplier order list",
+      "method": "GET",
+      "path": "/api/orders/farmer",
+      "status": 200,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Buyer cannot partially accept",
+      "method": "PATCH",
+      "path": "/api/orders/ord_uzngz59/partial-accept",
+      "status": 403,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Partial acceptance",
+      "method": "PATCH",
+      "path": "/api/orders/ord_uzngz59/partial-accept",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Invalid order status",
+      "method": "PATCH",
+      "path": "/api/orders/ord_uzngz59/status",
+      "status": 400,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Mark ready",
+      "method": "PATCH",
+      "path": "/api/orders/ord_uzngz59/status",
+      "status": 200,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Mark completed",
+      "method": "PATCH",
+      "path": "/api/orders/ord_uzngz59/status",
+      "status": 200,
+      "durationMs": 3,
+      "assertions": 3
+    },
+    {
+      "name": "Inventory audit",
+      "method": "GET",
+      "path": "/api/notifications/inventory-history",
+      "status": 200,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Notification logs",
+      "method": "GET",
+      "path": "/api/notifications",
+      "status": 200,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Simulated notification dispatch",
+      "method": "POST",
+      "path": "/api/notifications/test-sms",
+      "status": 200,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Weather advisory",
+      "method": "GET",
+      "path": "/api/weather?city=Hyderabad",
+      "status": 200,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Buyer cannot delete produce",
+      "method": "DELETE",
+      "path": "/api/products/prod_yc9e5xp",
+      "status": 403,
+      "durationMs": 2,
+      "assertions": 3
+    },
+    {
+      "name": "Delete test produce",
+      "method": "DELETE",
+      "path": "/api/products/prod_yc9e5xp",
+      "status": 200,
+      "durationMs": 1,
+      "assertions": 3
+    },
+    {
+      "name": "Missing product",
+      "method": "DELETE",
+      "path": "/api/products/prod_yc9e5xp",
+      "status": 404,
+      "durationMs": 2,
+      "assertions": 3
+    }
+  ]
+}

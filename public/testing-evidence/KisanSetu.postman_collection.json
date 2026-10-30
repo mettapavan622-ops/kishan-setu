@@ -1,0 +1,1566 @@
+{
+  "info": {
+    "name": "KisanSetu API \u2014 Regression Tests",
+    "schema": "https://schema.postman.com/json/collection/v2.1.0/collection.json",
+    "description": "Derived from main fb4534b. Run in order against a disposable local server. Creates unique supplier/buyer accounts and a product, exercises checkout, and deletes its product. Accounts/orders remain in memory until server restart. Weather/SMS are simulated by the application, not external provider verification."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "invalidToken",
+      "value": "invalid-test-token"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/health",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"suffix\", String(Date.now()).slice(-9));",
+              "pm.collectionVariables.set(\"supplierPhone\", \"7\"+pm.collectionVariables.get(\"suffix\"));",
+              "pm.collectionVariables.set(\"buyerPhone\", \"8\"+pm.collectionVariables.get(\"suffix\"));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Healthy and timestamp\",()=>{pm.expect(j.status).to.eql(\"ok\");pm.expect(Number.isNaN(Date.parse(j.time))).to.eql(false);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Missing signup fields",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/signup",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid phone",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/signup",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Test\", \"phone\": \"12\", \"password\": \"Test123!\", \"location\": \"Hyderabad\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Register supplier",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/signup",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Postman supplier\", \"phone\": \"{{supplierPhone}}\", \"password\": \"Test123!local\", \"confirmPassword\": \"Test123!local\", \"location\": \"Hyderabad\", \"preferredLanguage\": \"te\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Account created without password leak\",()=>{pm.expect(j.user.primaryRole).to.eql(\"unassigned\");pm.expect(j.user).not.to.have.property(\"passwordHash\");pm.expect(j.token).to.be.a(\"string\");});",
+              "pm.collectionVariables.set(\"supplierToken\",j.token);pm.collectionVariables.set(\"supplierId\",j.user.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Select supplier",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/auth/select-role",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"primaryRole\": \"supplier\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Role saved\",()=>pm.expect(j.user.primaryRole).to.eql(\"supplier\"));pm.collectionVariables.set(\"supplierToken\",j.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Register buyer",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/signup",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Postman buyer\", \"phone\": \"{{buyerPhone}}\", \"password\": \"Test123!local\", \"confirmPassword\": \"Test123!local\", \"location\": \"Hyderabad\", \"preferredLanguage\": \"te\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Account created without password leak\",()=>{pm.expect(j.user.primaryRole).to.eql(\"unassigned\");pm.expect(j.user).not.to.have.property(\"passwordHash\");pm.expect(j.token).to.be.a(\"string\");});",
+              "pm.collectionVariables.set(\"buyerToken\",j.token);pm.collectionVariables.set(\"buyerId\",j.user.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Select buyer",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/auth/select-role",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"primaryRole\": \"buyer\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Role saved\",()=>pm.expect(j.user.primaryRole).to.eql(\"buyer\"));pm.collectionVariables.set(\"buyerToken\",j.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Duplicate registration",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/signup",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Duplicate\", \"phone\": \"{{buyerPhone}}\", \"password\": \"Test123!\", \"location\": \"Hyderabad\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wrong password",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/login",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"phone\": \"{{buyerPhone}}\", \"password\": \"wrong\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buyer login",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/login",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"phone\": \"{{buyerPhone}}\", \"password\": \"Test123!local\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Correct identity\",()=>pm.expect(j.user.id).to.eql(pm.collectionVariables.get(\"buyerId\")));pm.collectionVariables.set(\"buyerToken\",j.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile requires auth",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/auth/me",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid token",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/auth/me",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{invalidToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buyer profile",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/auth/me",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Own profile\",()=>pm.expect(j.user.id).to.eql(pm.collectionVariables.get(\"buyerId\")));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid role",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/auth/select-role",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"primaryRole\": \"admin\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Set Telugu",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/auth/language",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"language\": \"te\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Telugu preference\",()=>pm.expect(j.user.preferredLanguage).to.eql(\"te\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unsupported language",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/auth/language",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"language\": \"xx\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buyer cannot list produce",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/products",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Postman Tomatoes {{suffix}}\", \"microCategory\": \"vegetables\", \"unit\": \"kg\", \"totalStock\": 100, \"basePrice\": 50, \"tieredPricing\": [{\"minQty\": 1, \"maxQty\": 20, \"pricePerUnit\": 50, \"label\": \"Retail\"}, {\"minQty\": 21, \"pricePerUnit\": 40, \"label\": \"Bulk\"}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Missing product fields",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/products",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create produce",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/products",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Postman Tomatoes {{suffix}}\", \"microCategory\": \"vegetables\", \"unit\": \"kg\", \"totalStock\": 100, \"basePrice\": 50, \"tieredPricing\": [{\"minQty\": 1, \"maxQty\": 20, \"pricePerUnit\": 50, \"label\": \"Retail\"}, {\"minQty\": 21, \"pricePerUnit\": 40, \"label\": \"Bulk\"}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Owner and stock\",()=>{pm.expect(j.product.farmerId).to.eql(pm.collectionVariables.get(\"supplierId\"));pm.expect(j.product.availableStock).to.eql(100);});pm.collectionVariables.set(\"productId\",j.product.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Filter supplier produce",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/products?farmerId={{supplierId}}&maxPrice=50",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Filter results\",()=>{pm.expect(j.products).to.have.lengthOf(1);j.products.forEach(p=>{pm.expect(p.farmerId).to.eql(pm.collectionVariables.get(\"supplierId\"));pm.expect(p.basePrice).to.be.at.most(50);});});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buyer cannot toggle others stock",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/products/{{productId}}/toggle-stock",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Toggle availability false",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/products/{{productId}}/toggle-stock",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Availability\",()=>pm.expect(j.product.isAvailable).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Toggle availability true",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/products/{{productId}}/toggle-stock",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Availability\",()=>pm.expect(j.product.isAvailable).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid lock quantity",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/orders/lock-stock",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"productId\": \"{{productId}}\", \"quantity\": 0}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Excess stock rejected",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/orders/lock-stock",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"productId\": \"{{productId}}\", \"quantity\": 101}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lock bulk stock",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/orders/lock-stock",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"productId\": \"{{productId}}\", \"quantity\": 25}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Bulk price and reservation\",()=>{pm.expect(j.unitPrice).to.eql(40);pm.expect(j.availableStock).to.eql(75);});pm.collectionVariables.set(\"lockId\",j.lock.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Release stock",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/orders/release-lock",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"lockId\": \"{{lockId}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Released\",()=>pm.expect(j.success).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lock for checkout",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/orders/lock-stock",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"productId\": \"{{productId}}\", \"quantity\": 10}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Stock restored before new lock\",()=>pm.expect(j.availableStock).to.eql(90));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Empty checkout",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/orders/checkout",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"items\": []}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/orders/checkout",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"items\": [{\"productId\": \"{{productId}}\", \"quantity\": 10}], \"paymentMethod\": \"cash_on_pickup\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Order totals and ownership\",()=>{pm.expect(j.order.buyerId).to.eql(pm.collectionVariables.get(\"buyerId\"));pm.expect(j.order.subtotal).to.eql(500);pm.expect(j.order.fee).to.eql(7.5);pm.expect(j.order.totalAmount).to.eql(507.5);pm.expect(j.order.status).to.eql(\"requested\");});pm.collectionVariables.set(\"orderId\",j.order.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "buyer order list",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/orders/buyer",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Created order visible\",()=>pm.expect(j.orders.map(o=>o.id)).to.include(pm.collectionVariables.get(\"orderId\")));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "supplier order list",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/orders/farmer",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Created order visible\",()=>pm.expect(j.orders.map(o=>o.id)).to.include(pm.collectionVariables.get(\"orderId\")));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buyer cannot partially accept",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/orders/{{orderId}}/partial-accept",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"partialItems\": [{\"productId\": \"{{productId}}\", \"acceptedQuantity\": 5}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Partial acceptance",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/orders/{{orderId}}/partial-accept",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"partialItems\": [{\"productId\": \"{{productId}}\", \"acceptedQuantity\": 5}], \"reason\": \"Only 5 kg ready\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Adjusted totals\",()=>{pm.expect(j.order.status).to.eql(\"accepted\");pm.expect(j.order.subtotal).to.eql(250);pm.expect(j.order.totalAmount).to.eql(253.75);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid order status",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/orders/{{orderId}}/status",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\": \"invalid\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mark ready",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/orders/{{orderId}}/status",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\": \"ready\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Order status\",()=>pm.expect(j.order.status).to.eql(\"ready\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mark completed",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/api/orders/{{orderId}}/status",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\": \"completed\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Order status\",()=>pm.expect(j.order.status).to.eql(\"completed\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory audit",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/notifications/inventory-history",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Own audit records\",()=>{pm.expect(j.history.length).to.be.above(0);j.history.forEach(h=>pm.expect(h.farmerId).to.eql(pm.collectionVariables.get(\"supplierId\")));});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notification logs",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/notifications",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Order generated notifications\",()=>pm.expect(j.notifications.some(n=>n.orderId===pm.collectionVariables.get(\"orderId\"))).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Simulated notification dispatch",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/notifications/test-sms",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"phone\": \"{{buyerPhone}}\", \"name\": \"Postman Test\", \"message\": \"Local test only\", \"channel\": \"SMS\", \"provider\": \"Twilio\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Simulated log\",()=>{pm.expect(j.log.message).to.eql(\"Local test only\");pm.expect(j.log.channel).to.eql(\"SMS\");});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weather advisory",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/weather?city=Hyderabad",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Advisory schema\",()=>{pm.expect(j.weather.city).to.eql(\"Hyderabad\");pm.expect(j.weather.temp).to.be.a(\"number\");pm.expect(j.weather.advisory).to.be.a(\"string\");});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buyer cannot delete produce",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/products/{{productId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{buyerToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete test produce",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/products/{{productId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Removed\",()=>pm.expect(j.message).to.eql(\"Product listing removed\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Missing product",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/products/{{productId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{supplierToken}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+              "const j = pm.response.json();",
+              "pm.test(\"Error message\",()=>pm.expect(j.message).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sprout,
+  ShieldCheck,
   ShoppingBag,
   Globe,
   Bell,
@@ -117,6 +118,9 @@ export const Navbar: React.FC = () => {
 
           {/* Right Controls: Language Selector, Cart, Notifications, User */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <button type="button" onClick={() => navigate('/testing-evidence')} title="API testing evidence" aria-label="View API testing evidence" className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-xs font-semibold text-emerald-900 focus-visible:outline-2 focus-visible:outline-emerald-700">
+              <ShieldCheck className="h-4 w-4" /><span className="hidden xl:inline">Test evidence</span>
+            </button>
             {/* Language Selector Dropdown */}
             <div className="relative">
               <button

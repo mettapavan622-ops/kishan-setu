@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
@@ -7,6 +7,8 @@ import { AuthPage } from './pages/AuthPage';
 import { RoleSelectionPage } from './pages/RoleSelectionPage';
 import { SupplierDashboard } from './pages/SupplierDashboard';
 import { BuyerDashboard } from './pages/BuyerDashboard';
+
+const TestingEvidencePage = lazy(() => import('./pages/TestingEvidencePage'));
 
 // Index root dispatcher
 const RootDispatcher: React.FC = () => {
@@ -42,6 +44,7 @@ export const AppRoutes: React.FC = () => {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<RootDispatcher />} />
+          <Route path="/testing-evidence" element={<Suspense fallback={<p className="p-8">Loading test evidence…</p>}><TestingEvidencePage /></Suspense>} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/select-role" element={<RoleSelectionPage />} />
 

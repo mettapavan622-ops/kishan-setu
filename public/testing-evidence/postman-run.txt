@@ -1,0 +1,339 @@
+No authorization data found. Please use the `postman login` command.
+Refer:https://learning.postman.com/docs/postman-cli/postman-cli-options/#postman-login
+
+Running your collection...
+postman
+
+KisanSetu API — Regression Tests
+
+Root Health
+
+  GET http://localhost:3000/api/health [200 OK, 284 B, 23 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Healthy and timestamp
+
+Root Missing signup fields
+
+  POST http://localhost:3000/api/auth/signup [400 Bad Request, 316 B, 10 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Invalid phone
+
+  POST http://localhost:3000/api/auth/signup [400 Bad Request, 302 B, 4 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Register supplier
+
+  POST http://localhost:3000/api/auth/signup [201 Created, 727 B, 85 ms]
+  Pass  HTTP 201
+  Pass  JSON response
+  Pass  Account created without password leak
+
+Root Select supplier
+
+  PATCH http://localhost:3000/api/auth/select-role [200 OK, 708 B, 5 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Role saved
+
+Root Register buyer
+
+  POST http://localhost:3000/api/auth/signup [201 Created, 724 B, 95 ms]
+  Pass  HTTP 201
+  Pass  JSON response
+  Pass  Account created without password leak
+
+Root Select buyer
+
+  PATCH http://localhost:3000/api/auth/select-role [200 OK, 698 B, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Role saved
+
+Root Duplicate registration
+
+  POST http://localhost:3000/api/auth/signup [409 Conflict, 317 B, 3 ms]
+  Pass  HTTP 409
+  Pass  JSON response
+  Pass  Error message
+
+Root Wrong password
+
+  POST http://localhost:3000/api/auth/login [401 Unauthorized, 307 B, 82 ms]
+  Pass  HTTP 401
+  Pass  JSON response
+  Pass  Error message
+
+Root Buyer login
+
+  POST http://localhost:3000/api/auth/login [200 OK, 695 B, 81 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Correct identity
+
+Root Profile requires auth
+
+  GET http://localhost:3000/api/auth/me [401 Unauthorized, 302 B, 2 ms]
+  Pass  HTTP 401
+  Pass  JSON response
+  Pass  Error message
+
+Root Invalid token
+
+  GET http://localhost:3000/api/auth/me [403 Forbidden, 280 B, 2 ms]
+  Pass  HTTP 403
+  Pass  JSON response
+  Pass  Error message
+
+Root Buyer profile
+
+  GET http://localhost:3000/api/auth/me [200 OK, 437 B, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Own profile
+
+Root Invalid role
+
+  PATCH http://localhost:3000/api/auth/select-role [400 Bad Request, 302 B, 3 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Set Telugu
+
+  PATCH http://localhost:3000/api/auth/language [200 OK, 466 B, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Telugu preference
+
+Root Unsupported language
+
+  PATCH http://localhost:3000/api/auth/language [400 Bad Request, 278 B, 3 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Buyer cannot list produce
+
+  POST http://localhost:3000/api/products [403 Forbidden, 307 B, 2 ms]
+  Pass  HTTP 403
+  Pass  JSON response
+  Pass  Error message
+
+Root Missing product fields
+
+  POST http://localhost:3000/api/products [400 Bad Request, 315 B, 2 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Create produce
+
+  POST http://localhost:3000/api/products [201 Created, 1.04 KB, 2 ms]
+  Pass  HTTP 201
+  Pass  JSON response
+  Pass  Owner and stock
+
+Root Filter supplier produce
+
+  GET http://localhost:3000/api/products?farmerId=usr_qhodsba&maxPrice=50 [200 OK, 1014 B, 4 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Filter results
+
+Root Buyer cannot toggle others stock
+
+  PATCH http://localhost:3000/api/products/prod_yc9e5xp/toggle-stock [403 Forbidden, 317 B, 3 ms]
+  Pass  HTTP 403
+  Pass  JSON response
+  Pass  Error message
+
+Root Toggle availability false
+
+  PATCH http://localhost:3000/api/products/prod_yc9e5xp/toggle-stock [200 OK, 1.03 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Availability
+
+Root Toggle availability true
+
+  PATCH http://localhost:3000/api/products/prod_yc9e5xp/toggle-stock [200 OK, 1.03 KB, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Availability
+
+Root Invalid lock quantity
+
+  POST http://localhost:3000/api/orders/lock-stock [400 Bad Request, 300 B, 4 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Excess stock rejected
+
+  POST http://localhost:3000/api/orders/lock-stock [400 Bad Request, 356 B, 3 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Lock bulk stock
+
+  POST http://localhost:3000/api/orders/lock-stock [200 OK, 568 B, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Bulk price and reservation
+
+Root Release stock
+
+  POST http://localhost:3000/api/orders/release-lock [200 OK, 277 B, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Released
+
+Root Lock for checkout
+
+  POST http://localhost:3000/api/orders/lock-stock [200 OK, 570 B, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Stock restored before new lock
+
+Root Empty checkout
+
+  POST http://localhost:3000/api/orders/checkout [400 Bad Request, 295 B, 3 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Checkout
+
+  POST http://localhost:3000/api/orders/checkout [201 Created, 1.08 KB, 3 ms]
+  Pass  HTTP 201
+  Pass  JSON response
+  Pass  Order totals and ownership
+
+Root buyer order list
+
+  GET http://localhost:3000/api/orders/buyer [200 OK, 1.01 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Created order visible
+
+Root supplier order list
+
+  GET http://localhost:3000/api/orders/farmer [200 OK, 1.01 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Created order visible
+
+Root Buyer cannot partially accept
+
+  PATCH http://localhost:3000/api/orders/ord_uzngz59/partial-accept [403 Forbidden, 320 B, 2 ms]
+  Pass  HTTP 403
+  Pass  JSON response
+  Pass  Error message
+
+Root Partial acceptance
+
+  PATCH http://localhost:3000/api/orders/ord_uzngz59/partial-accept [200 OK, 1.14 KB, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Adjusted totals
+
+Root Invalid order status
+
+  PATCH http://localhost:3000/api/orders/ord_uzngz59/status [400 Bad Request, 338 B, 2 ms]
+  Pass  HTTP 400
+  Pass  JSON response
+  Pass  Error message
+
+Root Mark ready
+
+  PATCH http://localhost:3000/api/orders/ord_uzngz59/status [200 OK, 1.12 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Order status
+
+Root Mark completed
+
+  PATCH http://localhost:3000/api/orders/ord_uzngz59/status [200 OK, 1.13 KB, 3 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Order status
+
+Root Inventory audit
+
+  GET http://localhost:3000/api/notifications/inventory-history [200 OK, 2.4 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Own audit records
+
+Root Notification logs
+
+  GET http://localhost:3000/api/notifications [200 OK, 2.25 KB, 2 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Order generated notifications
+
+Root Simulated notification dispatch
+
+  POST http://localhost:3000/api/notifications/test-sms [200 OK, 495 B, 2 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Simulated log
+
+Root Weather advisory
+
+  GET http://localhost:3000/api/weather?city=Hyderabad [200 OK, 472 B, 2 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Advisory schema
+
+Root Buyer cannot delete produce
+
+  DELETE http://localhost:3000/api/products/prod_yc9e5xp [403 Forbidden, 268 B, 2 ms]
+  Pass  HTTP 403
+  Pass  JSON response
+  Pass  Error message
+
+Root Delete test produce
+
+  DELETE http://localhost:3000/api/products/prod_yc9e5xp [200 OK, 272 B, 1 ms]
+  Pass  HTTP 200
+  Pass  JSON response
+  Pass  Removed
+
+Root Missing product
+
+  DELETE http://localhost:3000/api/products/prod_yc9e5xp [404 Not Found, 273 B, 2 ms]
+  Pass  HTTP 404
+  Pass  JSON response
+  Pass  Error message
+
+---------------------------------------------------------------------
+|                         |           executed |             failed |
+--------------------------+--------------------+---------------------
+|              iterations |                  1 |                  0 |
+--------------------------+--------------------+---------------------
+|                requests |                 44 |                  0 |
+--------------------------+--------------------+---------------------
+|            test-scripts |                 44 |                  0 |
+--------------------------+--------------------+---------------------
+|      prerequest-scripts |                  1 |                  0 |
+--------------------------+--------------------+---------------------
+|              assertions |                132 |                  0 |
+---------------------------------------------------------------------
+| total run duration: 1122 ms                                       |
+---------------------------------------------------------------------
+| total data received: 17.52 KB (approx)                            |
+---------------------------------------------------------------------
+| average response time: 10 ms [min: 1 ms, max: 95 ms, s.d.: 23 ms] |
+---------------------------------------------------------------------
+Postman credentials are required for publishing run details to Postman cloud.
+Please specify it by using the `postman login` command
+
+CLI_EXIT_CODE=0
